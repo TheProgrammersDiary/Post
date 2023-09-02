@@ -1,0 +1,8 @@
+createsPost=[
+  {
+    "author": "Human",
+    "content": "You either test first, test along coding, or don't test at all.",
+    "id": "#hidden#",
+    "title": "Testing matters"
+  }
+]

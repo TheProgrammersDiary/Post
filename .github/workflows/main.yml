@@ -1,0 +1,29 @@
+name: Post microservice CI/CD
+on:
+ push:
+    branches: [main]
+ pull_request:
+    branches: [main]
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: 17
+        distribution: temurin
+    - name: Cache
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2
+        key: ${{runner.os}}-m2-${{hashFiles('post/pom.xml')}}
+        restore-keys: ${{runner.os}}-m2
+    - name: Package
+      run: mvn -B -f post/pom.xml package
+    - run: mkdir artifact && cp post/target/*.jar artifact
+    - uses: actions/upload-artifact@v3
+      with:
+       name: postMicroservice
+       path: artifact
