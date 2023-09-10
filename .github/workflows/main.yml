@@ -28,10 +28,22 @@ jobs:
     - name: Publish Test Report
       if: success() || failure()
       uses: scacap/action-surefire-report@v1
-    - name: Publish to Docker Hub
-      uses: docker/build-push-action@v2
+    -
+      name: Set up QEMU
+      uses: docker/setup-qemu-action@v2
+    -
+      name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    -
+      name: Login to Docker Hub
+      uses: docker/login-action@v2
       with:
         username: ${{secrets.DOCKERHUB_USER}}
         password: ${{secrets.DOCKERHUB_PASSWORD}}
-        repository: localstradedocker/blog
-        tags: post_latest
+    -
+      name: Build and push docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        push: true
+        tags: localstradedocker/blog:post_latest
