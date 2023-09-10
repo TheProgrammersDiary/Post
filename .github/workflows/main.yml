@@ -22,8 +22,13 @@ jobs:
         restore-keys: ${{runner.os}}-m2
     - name: Package
       run: mvn -B -f post/pom.xml package
-    - run: mkdir artifact && cp post/target/*.jar artifact
-    - uses: actions/upload-artifact@v3
+    - name: Publish Test Report
+      if: success() || failure()
+      uses: scacap/action-surefire-report@v1
+    - name: Publish to Docker Hub
+      uses: docker/build-push-action@v1
       with:
-       name: postMicroservice
-       path: artifact
+        username: ${{secrets.DOCKERHUBUSER}}
+        password: ${{secrets.DOCKERHUB}}
+        repository: localstradedocker/blog
+        tags: post_latest
