@@ -24,7 +24,7 @@ import java.util.Arrays;
 @ExtendWith({SnapshotExtension.class})
 @ActiveProfiles("ittest")
 public class PostTest {
-
+ 
     private Expect expect;
 
     @Value(value="${local.server.port}")
