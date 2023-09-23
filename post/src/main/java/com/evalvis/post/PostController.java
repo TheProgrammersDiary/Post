@@ -2,14 +2,13 @@ package com.evalvis.post;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import protobufs.PostRequest;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Collection;
 
 @RestController
 @RequestMapping("posts")
+@CrossOrigin(origins = "http://localhost:3000")
 final class PostController {
 
     private final PostRepository postRepository;
@@ -19,17 +18,24 @@ final class PostController {
         this.postRepository = postRepository;
     }
 
-    @PostMapping(value = "/create")
-    ResponseEntity<PostRepository.PostEntry> create(@RequestBody PostRequest postRequest)
+    @GetMapping
+    ResponseEntity<Collection<PostRepository.PostEntry>> getAll()
     {
-        return ResponseEntity.ok(
-                postRepository.save(
-                        new PostRepository.PostEntry(
-                                postRequest.getAuthor(),
-                                postRequest.getTitle(),
-                                postRequest.getContent()
-                        )
-                )
-        );
+        return ResponseEntity.ok(postRepository.findAll());
+    }
+
+    @GetMapping(value = "/{id}")
+    ResponseEntity<PostRepository.PostEntry> getById(@PathVariable String id)
+    {
+        return postRepository
+                .findById(id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PostMapping(value = "/create")
+    ResponseEntity<PostRepository.PostEntry> create(@RequestBody Post post)
+    {
+        return ResponseEntity.ok(post.save(postRepository));
     }
 }

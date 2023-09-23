@@ -17,7 +17,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
-import protobufs.PostRequest;
 
 import java.util.Arrays;
 
@@ -58,16 +57,15 @@ public class PostTest {
     @Test
     @SnapshotName("createsPost")
     public void createsPost() {
-        PostRequest postRequest = PostRequest
-                .newBuilder()
-                .setAuthor("Human")
-                .setTitle("Testing matters")
-                .setContent("You either test first, test along coding, or don't test at all.")
-                .build();
+        Post post = new Post(
+                "Human",
+                "Testing matters",
+                "You either test first, test along coding, or don't test at all."
+        );
 
         PostRepository.PostEntry postFromResponse = restTemplate.postForObject(
                 "http://localhost:" + port + "/posts/create",
-                postRequest, PostRepository.PostEntry.class
+                post, PostRepository.PostEntry.class
         );
 
         expect.toMatchSnapshot(jsonWithMaskedProperties(postFromResponse, "id"));

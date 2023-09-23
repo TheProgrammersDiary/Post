@@ -5,8 +5,12 @@ import jakarta.persistence.*;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface PostRepository extends CrudRepository<PostRepository.PostEntry, String> {
+
+    List<PostEntry> findAll();
 
     @Entity(name = "post")
     @JsonPropertyOrder(alphabetic=true)
