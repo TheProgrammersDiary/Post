@@ -10,7 +10,6 @@ import java.util.Collection;
 @RequestMapping("posts")
 @CrossOrigin(origins = "http://localhost:3000")
 final class PostController {
-
     private final PostRepository postRepository;
 
     @Autowired
