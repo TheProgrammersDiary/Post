@@ -9,7 +9,6 @@ import java.util.List;
 
 @Repository
 public interface PostRepository extends CrudRepository<PostRepository.PostEntry, String> {
-
     List<PostEntry> findAll();
 
     @Entity(name = "post")
