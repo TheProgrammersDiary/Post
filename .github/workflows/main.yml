@@ -25,6 +25,8 @@ jobs:
         restore-keys: ${{runner.os}}-m2
     - name: Package
       run: mvn -B -s .github/maven-settings.xml -f post/pom.xml package
+      env:
+        ACCESS_TOKEN: ${{ secrets.PACKAGE_READ }}
     - name: Publish Test Report
       if: success() || failure()
       uses: scacap/action-surefire-report@v1
