@@ -22,10 +22,10 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.util.Arrays;
-import java.util.Date;
 
 import static io.restassured.RestAssured.given;
 
@@ -49,22 +49,30 @@ public class PostTest {
     private static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(
             "postgres:15.4"
     );
+    private static final GenericContainer<?> redis = new GenericContainer<>(
+            "redis:latest"
+    ).withExposedPorts(6379);
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
+
+        registry.add("spring.data.redis.host", redis::getHost);
+        registry.add("spring.data.redis.port", redis::getFirstMappedPort);
     }
 
     @BeforeAll
     static void beforeAll() {
         postgres.start();
+        redis.start();
     }
 
     @AfterAll
     static void afterAll() {
         postgres.stop();
+        redis.stop();
     }
 
     @Test
