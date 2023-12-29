@@ -8,7 +8,7 @@ import java.util.Collection;
 
 @RestController
 @RequestMapping("posts")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 final class PostController {
     private final PostRepository postRepository;
 
