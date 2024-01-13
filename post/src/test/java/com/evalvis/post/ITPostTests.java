@@ -32,8 +32,7 @@ import static io.restassured.RestAssured.given;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ExtendWith({SnapshotExtension.class})
 @ActiveProfiles("ittest")
-public class PostTest {
- 
+public class ITPostTests {
     private Expect expect;
 
     @Value(value="${local.server.port}")

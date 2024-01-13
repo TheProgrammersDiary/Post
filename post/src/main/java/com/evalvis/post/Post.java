@@ -1,7 +1,6 @@
 package com.evalvis.post;
 
 public final class Post {
-
     private final String author;
     private final String title;
     private final String content;

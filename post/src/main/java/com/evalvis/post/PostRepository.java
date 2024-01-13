@@ -6,6 +6,8 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 
 @Repository
 public interface PostRepository extends CrudRepository<PostRepository.PostEntry, String> {
@@ -14,9 +16,7 @@ public interface PostRepository extends CrudRepository<PostRepository.PostEntry,
     @Entity(name = "post")
     @JsonPropertyOrder(alphabetic=true)
     class PostEntry {
-
         @Id
-        @GeneratedValue(strategy = GenerationType.UUID)
         @Column(unique = true)
         private String id;
         @Column(nullable = false)
@@ -27,6 +27,7 @@ public interface PostRepository extends CrudRepository<PostRepository.PostEntry,
         private String content;
 
         PostEntry(String author, String title, String content) {
+            this.id = UUID.randomUUID().toString();
             this.author = author;
             this.title = title;
             this.content = content;
@@ -48,6 +49,29 @@ public interface PostRepository extends CrudRepository<PostRepository.PostEntry,
 
         public String getContent() {
             return content;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            PostEntry postEntry = (PostEntry) o;
+            return Objects.equals(id, postEntry.id);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(id);
+        }
+
+        @Override
+        public String toString() {
+            return "PostEntry{" +
+                    "id='" + id + '\'' +
+                    ", author='" + author + '\'' +
+                    ", title='" + title + '\'' +
+                    ", content='" + content + '\'' +
+                    '}';
         }
     }
 }
