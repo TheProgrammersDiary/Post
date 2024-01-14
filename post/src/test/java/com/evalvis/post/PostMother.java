@@ -1,6 +1,5 @@
 package com.evalvis.post;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class PostMother {
@@ -15,9 +14,9 @@ public class PostMother {
     }
 
     public List<PostRepository.PostEntry> createMultiple() {
-        List<PostRepository.PostEntry> entries = new ArrayList<>();
-        entries.add(controller.create(new Post("author1", "title1", "content1")).getBody());
-        entries.add(controller.create(new Post("author2", "title2", "content2")).getBody());
-        return entries;
+        return List.of(
+                controller.create(new Post("author1", "title1", "content1")).getBody(),
+                controller.create(new Post("author2", "title2", "content2")).getBody()
+        );
     }
 }
