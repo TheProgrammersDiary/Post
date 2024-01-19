@@ -35,7 +35,7 @@ import static io.restassured.RestAssured.given;
 public class ITPostTests {
     private Expect expect;
 
-    @Value(value="${local.server.port}")
+    @Value("${local.server.port}")
     private int port;
 
     @Autowired
@@ -44,10 +44,10 @@ public class ITPostTests {
     private JwtKey key;
     @Autowired
     private BlacklistedJwtTokenRepository blacklistedJwtTokenRepository;
+    @Value("${server.ssl.key-store-password}")
+    private String sslPassword;
 
-    private static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(
-            "postgres:15.4"
-    );
+    private static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15.4");
     private static final GenericContainer<?> redis = new GenericContainer<>(
             "redis:latest"
     ).withExposedPorts(6379);
@@ -90,9 +90,9 @@ public class ITPostTests {
                 "Testing matters",
                 "You either test first, test along coding, or don't test at all."
         );
-
         PostRepository.PostEntry postFromResponse = given()
-                .baseUri("http://localhost:" + port)
+                .trustStore("blog.p12", sslPassword)
+                .baseUri("https://localhost:" + port)
                 .contentType("application/json")
                 .body(post)
                 .cookie(jwt)
