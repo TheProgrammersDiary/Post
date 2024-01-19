@@ -24,7 +24,7 @@ jobs:
         key: ${{runner.os}}-m2-${{hashFiles('post/pom.xml')}}
         restore-keys: ${{runner.os}}-m2
     - name: Package
-      run: mvn -B -s .github/maven-settings.xml -f post/pom.xml package
+      run: mvn -B -s .github/maven-settings.xml -f post/pom.xml -Dssl_blog_passphrase=$ssl_blog_passphrase package
       env:
         ACCESS_TOKEN: ${{ secrets.PACKAGE_READ }}
     - name: Publish Test Report
