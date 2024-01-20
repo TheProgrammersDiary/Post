@@ -1,3 +1,5 @@
+post:
+  frontend-url: "https://localhost:3000"
 server:
   ssl:
     key-store: classpath:blog.p12
