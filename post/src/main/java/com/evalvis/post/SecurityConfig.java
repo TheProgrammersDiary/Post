@@ -42,7 +42,7 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .requiresChannel(channel -> channel.anyRequest().requiresSecure())
-                .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf.disable()) // Implemented manually by using double submit token.
                 .exceptionHandling(
                         exception -> exception.authenticationEntryPoint(
                                 (request, response, authException) -> {
@@ -78,8 +78,8 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(Collections.singletonList(frontendUrl));
-        config.setAllowedMethods(List.of("GET", "POST"));
-        config.setAllowedHeaders(List.of("Origin", "Content-Type", "Accept", "Authorization"));
+        config.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
+        config.setAllowedHeaders(List.of("Origin", "Content-Type", "Accept", "Authorization", "X-CSRF-TOKEN"));
         config.setAllowCredentials(true);
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);

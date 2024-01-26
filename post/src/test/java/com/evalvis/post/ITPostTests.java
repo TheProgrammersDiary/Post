@@ -77,14 +77,14 @@ public class ITPostTests {
     @Test
     @SnapshotName("createsPost")
     public void createsPost() {
-        Cookie jwt = new Cookie.Builder(
-                "jwt",
-                JwtToken.create(
-                        new UsernamePasswordAuthenticationToken(new User("tester", null), null, null),
-                        key.value(),
-                        blacklistedJwtTokenRepository
-                ).value()
-        ).build();
+        JwtToken jwtToken = JwtToken.create(
+                new UsernamePasswordAuthenticationToken(
+                        new User("tester", null), null, null
+                ),
+                key.value(),
+                blacklistedJwtTokenRepository
+        );
+        Cookie jwt = new Cookie.Builder("jwt", jwtToken.value()).build();
         Post post = new Post(
                 "Human",
                 "Testing matters",
@@ -94,6 +94,7 @@ public class ITPostTests {
                 .trustStore("blog.p12", sslPassword)
                 .baseUri("https://localhost:" + port)
                 .contentType("application/json")
+                .header("X-CSRF-TOKEN", jwtToken.csrfToken())
                 .body(post)
                 .cookie(jwt)
                 .post("/posts/create")
