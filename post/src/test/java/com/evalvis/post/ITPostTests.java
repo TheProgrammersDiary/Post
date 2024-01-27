@@ -10,6 +10,7 @@ import com.evalvis.security.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.restassured.http.Cookie;
+import io.restassured.response.Response;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import java.util.Arrays;
 
 import static io.restassured.RestAssured.given;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ExtendWith({SnapshotExtension.class})
@@ -77,30 +79,52 @@ public class ITPostTests {
     @Test
     @SnapshotName("createsPost")
     public void createsPost() {
-        JwtToken jwtToken = JwtToken.create(
+        JwtToken jwtToken = jwtToken();
+
+        PostRepository.PostEntry postFromResponse = given()
+                .trustStore("blog.p12", sslPassword)
+                .baseUri("https://localhost:" + port)
+                .contentType("application/json")
+                .header("X-CSRF-TOKEN", jwtToken.csrfToken())
+                .body(post())
+                .cookie(new Cookie.Builder("jwt", jwtToken.value()).build())
+                .post("/posts/create")
+                .as(PostRepository.PostEntry.class);
+
+        expect.toMatchSnapshot(jsonWithMaskedProperties(postFromResponse, "id"));
+    }
+
+    @Test
+    public void authorizedRequestWithoutCsrfFails() {
+        JwtToken jwtToken = jwtToken();
+
+        Response response = given()
+                .trustStore("blog.p12", sslPassword)
+                .baseUri("https://localhost:" + port)
+                .contentType("application/json")
+                .body(post())
+                .cookie(new Cookie.Builder("jwt", jwtToken.value()).build())
+                .post("/posts/create");
+
+        assertEquals(401, response.statusCode());
+    }
+
+    private JwtToken jwtToken() {
+        return JwtToken.create(
                 new UsernamePasswordAuthenticationToken(
                         new User("tester", null), null, null
                 ),
                 key.value(),
                 blacklistedJwtTokenRepository
         );
-        Cookie jwt = new Cookie.Builder("jwt", jwtToken.value()).build();
-        Post post = new Post(
+    }
+
+    private Post post() {
+        return new Post(
                 "Human",
                 "Testing matters",
                 "You either test first, test along coding, or don't test at all."
         );
-        PostRepository.PostEntry postFromResponse = given()
-                .trustStore("blog.p12", sslPassword)
-                .baseUri("https://localhost:" + port)
-                .contentType("application/json")
-                .header("X-CSRF-TOKEN", jwtToken.csrfToken())
-                .body(post)
-                .cookie(jwt)
-                .post("/posts/create")
-                .as(PostRepository.PostEntry.class);
-
-        expect.toMatchSnapshot(jsonWithMaskedProperties(postFromResponse, "id"));
     }
 
     private <T> ObjectNode jsonWithMaskedProperties(T object, String... properties) {

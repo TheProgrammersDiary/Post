@@ -134,6 +134,8 @@
                 <configuration>
                     <excludes>
                         <exclude>com/evalvis/post/PostRepository$PostEntry.class</exclude>
+                        <exclude>com/evalvis/post/logging/BadRequestException.class</exclude>
+                        <exclude>com/evalvis/post/logging/RestNotFoundException.class</exclude>
                     </excludes>
                 </configuration>
                 <executions>

@@ -1,5 +1,6 @@
 package com.evalvis.post;
 
+import com.evalvis.post.logging.RestNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,7 +29,7 @@ final class PostController {
         return postRepository
                 .findById(id)
                 .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+                .orElseThrow(() -> new RestNotFoundException("Post with id: " + id + " not found."));
     }
 
     @PostMapping(value = "/create")
