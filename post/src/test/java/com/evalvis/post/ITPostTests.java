@@ -112,7 +112,7 @@ public class ITPostTests {
     private JwtToken jwtToken() {
         return JwtToken.create(
                 new UsernamePasswordAuthenticationToken(
-                        new User("tester", null), null, null
+                        new User("tester@gmail.com", null), null, null
                 ),
                 key.value(),
                 blacklistedJwtTokenRepository
