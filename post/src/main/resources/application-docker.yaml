@@ -1,5 +1,6 @@
 post:
   frontend-url: "https://localhost:3000"
+  http-masking-turned-on: true
 server:
   ssl:
     key-store: classpath:blog.p12
