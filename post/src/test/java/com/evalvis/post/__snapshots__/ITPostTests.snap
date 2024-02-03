@@ -1,8 +1,0 @@
-createsPost=[
-  {
-    "author": "Human",
-    "title": "Testing matters",
-    "content": "You either test first, test along coding, or don't test at all.",
-    "id": "#hidden#"
-  }
-]

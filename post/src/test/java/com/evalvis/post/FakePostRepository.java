@@ -1,13 +1,17 @@
 package com.evalvis.post;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class FakePostRepository implements PostRepository {
-    private final Map<String, PostEntry> entries = new HashMap<>();
+    private final Map<String, List<PostEntry>> entries = new HashMap<>();
 
     @Override
     public <S extends PostEntry> S save(S entry) {
-        entries.put(entry.getId(), entry);
+        entries.merge(entry.getId(), new ArrayList<>(List.of(entry)), (oldValue, newValue) -> {
+            oldValue.addAll(newValue);
+            return oldValue;
+        });
         return entry;
     }
 
@@ -18,7 +22,7 @@ public class FakePostRepository implements PostRepository {
 
     @Override
     public Optional<PostEntry> findById(String id) {
-        return Optional.ofNullable(entries.get(id));
+        throw new UnsupportedOperationException("Not implemented.");
     }
 
     @Override
@@ -27,8 +31,30 @@ public class FakePostRepository implements PostRepository {
     }
 
     @Override
-    public List<PostEntry> findAll() {
-        return entries.values().stream().toList();
+    public Iterable<PostEntry> findAll() {
+        throw new UnsupportedOperationException("Not implemented.");
+    }
+
+    @Override
+    public List<PostEntry> allPostsLatestVersions() {
+        return entries.values().stream()
+                .map(postEntries -> postEntries.stream().max(Comparator.comparing(PostEntry::getDatePosted)))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean existsByIdAndAuthorEmail(String id, String email) {
+        return entries.getOrDefault(id, new ArrayList<>()).stream().anyMatch(post -> post.getAuthorEmail().equals(email));
+    }
+
+    @Override
+    public Optional<PostEntry> findFirstByIdOrderByDatePostedDesc(String id) {
+        return entries
+                .getOrDefault(id, new ArrayList<>())
+                .stream()
+                .max(Comparator.comparing(post -> post.datePosted));
     }
 
     @Override

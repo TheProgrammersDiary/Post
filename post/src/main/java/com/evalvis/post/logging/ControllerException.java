@@ -25,6 +25,11 @@ public class ControllerException {
     }
 
     @ExceptionHandler
+    public ResponseEntity<String> clientException(UnauthorizedException e) {
+        return clientError(e, HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler
     public ResponseEntity<String> badCredentialsException(BadCredentialsException e) {
         return clientError(e, "Bad credentials.", HttpStatus.UNAUTHORIZED);
     }

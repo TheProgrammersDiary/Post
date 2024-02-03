@@ -1,5 +1,7 @@
 package com.evalvis.post;
 
+import org.springframework.security.core.context.SecurityContextHolder;
+
 import java.util.Optional;
 
 public final class Post {
@@ -13,8 +15,14 @@ public final class Post {
 
     public static Optional<Post> existing(String id, PostRepository postRepository, ContentStorage contentStorage) {
         return postRepository
-                .findById(id)
-                .map(entry -> new Post(entry.getAuthor(), entry.getTitle(), contentStorage.download(entry.getId())));
+                .findFirstByIdOrderByDatePostedDesc(id)
+                .map(
+                        entry -> new Post(
+                                entry.getAuthorName(),
+                                entry.getTitle(),
+                                contentStorage.download(entry.getId(), entry.getVersion())
+                        )
+                );
     }
 
     private Post(String author, String title, String content) {
@@ -23,9 +31,13 @@ public final class Post {
         this.content = content;
     }
 
-    public PostRepository.PostEntry save(PostRepository postRepository, ContentStorage contentStorage) {
-        PostRepository.PostEntry entry = postRepository.save(new PostRepository.PostEntry(author, title));
-        contentStorage.upload(entry.getId(), content);
+    public PostRepository.PostEntry save(PostRepository repo, ContentStorage storage) {
+        PostRepository.PostEntry entry = repo.save(
+                PostRepository.PostEntry.newlyCreated(
+                        author, SecurityContextHolder.getContext().getAuthentication().getName(), title
+                )
+        );
+        storage.upload(entry.getId(), entry.getVersion(), content);
         return entry;
     }
 

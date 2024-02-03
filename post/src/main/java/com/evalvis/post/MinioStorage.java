@@ -21,12 +21,12 @@ public class MinioStorage implements ContentStorage {
     private String bucket;
 
     @Override
-    public void upload(String objectId, String content) {
+    public void upload(String objectId, int version, String content) {
         try {
             InputStream stream = new ByteArrayInputStream(content.getBytes());
             minioClient.putObject(PutObjectArgs.builder()
                     .bucket(bucket)
-                    .object(objectId)
+                    .object(objectId + "_v" + version)
                     .stream(stream, stream.available(), -1)
                     .build());
         } catch (MinioException | IOException | InvalidKeyException | NoSuchAlgorithmException e) {
@@ -35,11 +35,11 @@ public class MinioStorage implements ContentStorage {
     }
 
     @Override
-    public String download(String objectId) {
+    public String download(String objectId, int version) {
         try {
             InputStream stream = minioClient.getObject(GetObjectArgs.builder()
                     .bucket(bucket)
-                    .object(objectId)
+                    .object(objectId + "_v" + version)
                     .build());
             return new BufferedReader(new InputStreamReader(stream))
                     .lines()

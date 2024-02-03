@@ -1,0 +1,19 @@
+com.evalvis.post.PostTests.createsPost=[
+  {
+    "authorName": "author",
+    "datePosted": "#hidden#",
+    "id": "#hidden#",
+    "title": "title",
+    "version": 1
+  }
+]
+
+
+com.evalvis.post.PostTests.editsPost=[
+  {
+    "author": "author",
+    "title": "changed",
+    "content": "changed",
+    "id": "#hidden#"
+  }
+]
