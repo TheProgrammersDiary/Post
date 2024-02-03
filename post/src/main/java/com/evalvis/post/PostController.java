@@ -11,10 +11,12 @@ import java.util.Collection;
 @RequestMapping("posts")
 final class PostController {
     private final PostRepository postRepository;
+    private final ContentStorage contentStorage;
 
     @Autowired
-    PostController(PostRepository postRepository) {
+    PostController(PostRepository postRepository, ContentStorage contentStorage) {
         this.postRepository = postRepository;
+        this.contentStorage = contentStorage;
     }
 
     @GetMapping
@@ -24,10 +26,10 @@ final class PostController {
     }
 
     @GetMapping(value = "/{id}")
-    ResponseEntity<PostRepository.PostEntry> getById(@PathVariable String id)
+    ResponseEntity<Post> getById(@PathVariable String id)
     {
-        return postRepository
-                .findById(id)
+        return Post
+                .existing(id, postRepository, contentStorage)
                 .map(ResponseEntity::ok)
                 .orElseThrow(() -> new RestNotFoundException("Post with id: " + id + " not found."));
     }
@@ -35,6 +37,6 @@ final class PostController {
     @PostMapping(value = "/create")
     ResponseEntity<PostRepository.PostEntry> create(@RequestBody Post post)
     {
-        return ResponseEntity.ok(post.save(postRepository));
+        return ResponseEntity.ok(post.save(postRepository, contentStorage));
     }
 }

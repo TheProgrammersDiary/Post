@@ -119,6 +119,11 @@
             <version>RELEASE</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>io.minio</groupId>
+            <artifactId>minio</artifactId>
+            <version>8.5.7</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -133,6 +138,8 @@
                 <version>0.8.11</version>
                 <configuration>
                     <excludes>
+                        <exclude>com/evalvis/post/PostApplication.class</exclude>
+                        <exclude>com/evalvis/post/MinioConfig.class</exclude>
                         <exclude>com/evalvis/post/PostRepository$PostEntry.class</exclude>
                         <exclude>com/evalvis/post/logging/HttpLoggingFilter.class</exclude>
                         <exclude>com/evalvis/post/logging/ControllerException.class</exclude>

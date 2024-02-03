@@ -23,14 +23,11 @@ public interface PostRepository extends CrudRepository<PostRepository.PostEntry,
         private String author;
         @Column(nullable = false)
         private String title;
-        @Column(nullable = false)
-        private String content;
 
-        PostEntry(String author, String title, String content) {
+        PostEntry(String author, String title) {
             this.id = UUID.randomUUID().toString();
             this.author = author;
             this.title = title;
-            this.content = content;
         }
 
         public PostEntry() {}
@@ -45,10 +42,6 @@ public interface PostRepository extends CrudRepository<PostRepository.PostEntry,
 
         public String getTitle() {
             return title;
-        }
-
-        public String getContent() {
-            return content;
         }
 
         @Override
@@ -70,7 +63,6 @@ public interface PostRepository extends CrudRepository<PostRepository.PostEntry,
                     "id='" + id + '\'' +
                     ", author='" + author + '\'' +
                     ", title='" + title + '\'' +
-                    ", content='" + content + '\'' +
                     '}';
         }
     }

@@ -1,7 +1,6 @@
 com.evalvis.post.PostTests.createsPost=[
   {
     "author": "author",
-    "content": "content",
     "id": "#hidden#",
     "title": "title"
   }

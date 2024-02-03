@@ -8,6 +8,11 @@ server:
     key-store-type: pkcs12
     key-alias: blog
     key-password: ${ssl_blog_passphrase}
+minio:
+  url: http://minio:9000
+  bucket: posts
+  username: admin
+  password: ${minio_password}
 spring:
   data:
     redis:

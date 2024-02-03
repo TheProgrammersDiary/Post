@@ -48,11 +48,21 @@ public class ITPostTests {
     private BlacklistedJwtTokenRepository blacklistedJwtTokenRepository;
     @Value("${server.ssl.key-store-password}")
     private String sslPassword;
+    @Value("${minio.password}")
+    private String minioPassword;
 
     private static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15.4");
     private static final GenericContainer<?> redis = new GenericContainer<>(
             "redis:latest"
     ).withExposedPorts(6379);
+
+    private static final GenericContainer<?> minio = new GenericContainer<>(
+            "minio/minio:RELEASE.2023-06-29T05-12-28Z.fips"
+    )
+            .withExposedPorts(9000)
+            .withCommand("server /data")
+            .withEnv("MINIO_ROOT_USER", "admin")
+            .withEnv("MINIO_ROOT_PASSWORD", "administrator");
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
@@ -62,18 +72,22 @@ public class ITPostTests {
 
         registry.add("spring.data.redis.host", redis::getHost);
         registry.add("spring.data.redis.port", redis::getFirstMappedPort);
+
+        registry.add("minio.url", () -> "http://" + minio.getHost() + ":" + minio.getFirstMappedPort());
     }
 
     @BeforeAll
     static void beforeAll() {
         postgres.start();
         redis.start();
+        minio.start();
     }
 
     @AfterAll
     static void afterAll() {
         postgres.stop();
         redis.stop();
+        minio.stop();
     }
 
     @Test
@@ -81,7 +95,7 @@ public class ITPostTests {
     public void createsPost() {
         JwtToken jwtToken = jwtToken();
 
-        PostRepository.PostEntry postFromResponse = given()
+        String id = given()
                 .trustStore("blog.p12", sslPassword)
                 .baseUri("https://localhost:" + port)
                 .contentType("application/json")
@@ -89,9 +103,17 @@ public class ITPostTests {
                 .body(post())
                 .cookie(new Cookie.Builder("jwt", jwtToken.value()).build())
                 .post("/posts/create")
-                .as(PostRepository.PostEntry.class);
+                .as(PostRepository.PostEntry.class)
+                .getId();
 
-        expect.toMatchSnapshot(jsonWithMaskedProperties(postFromResponse, "id"));
+        Post post = given()
+                .trustStore("blog.p12", sslPassword)
+                .baseUri("https://localhost:" + port)
+                .contentType("application/json")
+                .get("/posts/" + id)
+                .as(Post.class);
+
+        expect.toMatchSnapshot(jsonWithMaskedProperties(post, "id"));
     }
 
     @Test
@@ -120,7 +142,7 @@ public class ITPostTests {
     }
 
     private Post post() {
-        return new Post(
+        return Post.newlyCreated(
                 "Human",
                 "Testing matters",
                 "You either test first, test along coding, or don't test at all."

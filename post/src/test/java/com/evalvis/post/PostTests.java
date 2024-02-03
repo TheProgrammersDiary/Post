@@ -17,11 +17,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @ExtendWith({SnapshotExtension.class})
 public class PostTests {
     private Expect expect;
+    private final PostRepository repository;
     private final PostController controller;
     private final PostMother mother;
 
     public PostTests() {
-        this.controller = new PostController(new FakePostRepository());
+        this.repository = new FakePostRepository();
+        this.controller = new PostController(repository, new FakeMinioStorage());
         this.mother = new PostMother(this.controller);
     }
 
@@ -42,7 +44,7 @@ public class PostTests {
     public void findsPost() {
         PostRepository.PostEntry initialPost = mother.create();
 
-        PostRepository.PostEntry foundPost = controller.getById(initialPost.getId()).getBody();
+        PostRepository.PostEntry foundPost = repository.findById(initialPost.getId()).get();
 
         assertEquals(initialPost, foundPost);
     }
@@ -51,7 +53,7 @@ public class PostTests {
     public void findsAllPosts() {
         List<PostRepository.PostEntry> initialPosts = mother.createMultiple();
 
-        List<PostRepository.PostEntry> foundPosts = new ArrayList(controller.getAll().getBody());
+        List<PostRepository.PostEntry> foundPosts = new ArrayList<>(controller.getAll().getBody());
 
         Assertions.assertThat(foundPosts)
                 .extractingResultOf("toString")
