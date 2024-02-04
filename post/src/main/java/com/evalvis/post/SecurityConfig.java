@@ -58,7 +58,9 @@ public class SecurityConfig {
                                 .permitAll()
                                 .requestMatchers("/posts/create")
                                 .authenticated()
-                                .requestMatchers("/posts", "/posts/{id}")
+                                .requestMatchers(
+                                        "/posts", "/posts/{id}", "/posts/{id}/{version}", "/posts/{id}/version"
+                                )
                                 .permitAll()
                                 .anyRequest()
                                 .authenticated()

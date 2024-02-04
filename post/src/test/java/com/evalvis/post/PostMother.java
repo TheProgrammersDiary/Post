@@ -25,6 +25,6 @@ public class PostMother {
     public Post edit(EditedPost post) {
         int status = controller.edit(post).getStatusCode().value();
         assertEquals(200, status);
-        return controller.getById(post.getId(), new FakeHttpServletRequest(), new FakeHttpServletResponse()).getBody();
+        return controller.findLatestById(post.getId(), new FakeHttpServletRequest(), new FakeHttpServletResponse()).getBody();
     }
 }

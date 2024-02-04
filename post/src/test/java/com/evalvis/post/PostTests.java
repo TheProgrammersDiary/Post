@@ -5,7 +5,7 @@ import au.com.origin.snapshots.junit5.SnapshotExtension;
 import com.evalvis.post.logging.RestNotFoundException;
 import com.evalvis.security.BlacklistedJwtTokenRepository;
 import com.evalvis.security.JwtKey;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.jsonwebtoken.io.Decoders;
@@ -22,7 +22,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith({SnapshotExtension.class})
 public class PostTests {
@@ -61,33 +62,75 @@ public class PostTests {
     }
 
     @Test
-    public void createsPost() {
+    void createsPost() {
         PostRepository.PostEntry post = mother.create("content");
 
-        expect.toMatchSnapshot(jsonWithMaskedProperties(post, "id", "datePosted"));
+        expect.toMatchSnapshot(jsonWithMaskedProperties(post, "postId", "datePosted"));
     }
 
     @Test
-    public void editsPost() {
+    void editsPost() {
         PostRepository.PostEntry post = mother.create("initial");
 
-        Post editedPost = mother.edit(new EditedPost(post.getId(), "changed", "changed"));
+        Post editedPost = mother.edit(new EditedPost(post.getPostId(), "changed", "changed"));
 
-        expect.toMatchSnapshot(jsonWithMaskedProperties(editedPost, "id"));
+        expect.toMatchSnapshot(jsonWithMaskedProperties(editedPost, "postId"));
+    }
+
+    @Test
+    void findsEarlierPost() {
+        PostRepository.PostEntry post = mother.create("initial");
+
+        mother.edit(new EditedPost(post.getPostId(), "changed", "changed"));
+
+        expect.toMatchSnapshot(
+                controller.findByIdAndVersion(
+                        post.getPostId(), 1, new FakeHttpServletRequest(), new FakeHttpServletResponse()
+                )
+        );
+    }
+
+    @Test
+    void getsDateVersionMapping() {
+        String id = mother.create("initial").getPostId();
+        mother.edit(new EditedPost(id, "changed", "changed"));
+        mother.edit(new EditedPost(id, "changedAgain", "changedAgain"));
+
+        expect.toMatchSnapshot(
+                jsonWithMaskedProperties(controller.getDateVersionMapping(id), "postId", "datePosted")
+        );
     }
 
     private <T> ObjectNode jsonWithMaskedProperties(T object, String... properties) {
-        ObjectNode node = new ObjectMapper().valueToTree(object);
-        Arrays.stream(properties).forEach(property -> node.put(property, "#hidden#"));
-        return node;
+        try {
+            ObjectNode node = new ObjectMapper().valueToTree(object);
+            Arrays.stream(properties).forEach(property -> maskField(node, property));
+            return node;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void maskField(JsonNode node, String property) {
+        if (node.isObject()) {
+            ObjectNode objectNode = (ObjectNode) node;
+            if (objectNode.has(property)) {
+                objectNode.put(property, "#hidden#");
+            }
+            objectNode.fields().forEachRemaining(entry -> maskField(entry.getValue(), property));
+        } else if (node.isArray()) {
+            for (JsonNode element : node) {
+                maskField(element, property);
+            }
+        }
     }
 
     @Test
-    public void findsPost() {
+    void findsPost() {
         PostRepository.PostEntry initialPost = mother.create("content");
 
-        Post foundPost = controller.getById(
-                initialPost.getId(), new FakeHttpServletRequest(), new FakeHttpServletResponse()
+        Post foundPost = controller.findLatestById(
+                initialPost.getPostId(), new FakeHttpServletRequest(), new FakeHttpServletResponse()
         ).getBody();
 
         assertEquals(initialPost.getAuthorName(), foundPost.getAuthor());
@@ -96,7 +139,7 @@ public class PostTests {
     }
 
     @Test
-    public void findsAllPosts() {
+    void findsAllPosts() {
         List<PostRepository.PostEntry> initialPosts = mother.createMultiple();
 
         List<PostRepository.PostEntry> foundPosts = new ArrayList<>(controller.getAll().getBody());
@@ -109,10 +152,10 @@ public class PostTests {
     }
 
     @Test
-    public void throwsExceptionIfSearchedPostDoesNotExist() {
+    void throwsExceptionIfSearchedPostDoesNotExist() {
         Exception e = assertThrows(
                 RestNotFoundException.class,
-                () -> controller.getById(
+                () -> controller.findLatestById(
                         "not-existing-id", new FakeHttpServletRequest(), new FakeHttpServletResponse()
                 )
         );

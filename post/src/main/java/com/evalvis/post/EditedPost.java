@@ -13,9 +13,9 @@ public class EditedPost {
 
     public void edit(PostRepository repository, ContentStorage storage) {
         repository
-                .findFirstByIdOrderByDatePostedDesc(id)
+                .findFirstByPostIdOrderByDatePostedDesc(id)
                 .ifPresent(entry -> {
-                    storage.upload(entry.getId(), entry.getVersion() + 1, content);
+                    storage.upload(entry.getPostId(), entry.getVersion() + 1, content);
                     repository.save(PostRepository.PostEntry.edited(title, entry));
                 });
     }

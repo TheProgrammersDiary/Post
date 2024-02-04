@@ -8,7 +8,7 @@ public class FakePostRepository implements PostRepository {
 
     @Override
     public <S extends PostEntry> S save(S entry) {
-        entries.merge(entry.getId(), new ArrayList<>(List.of(entry)), (oldValue, newValue) -> {
+        entries.merge(entry.getPostId(), new ArrayList<>(List.of(entry)), (oldValue, newValue) -> {
             oldValue.addAll(newValue);
             return oldValue;
         });
@@ -45,16 +45,26 @@ public class FakePostRepository implements PostRepository {
     }
 
     @Override
-    public boolean existsByIdAndAuthorEmail(String id, String email) {
+    public boolean existsByPostIdAndAuthorEmail(String id, String email) {
         return entries.getOrDefault(id, new ArrayList<>()).stream().anyMatch(post -> post.getAuthorEmail().equals(email));
     }
 
     @Override
-    public Optional<PostEntry> findFirstByIdOrderByDatePostedDesc(String id) {
+    public Optional<PostEntry> findFirstByPostIdOrderByDatePostedDesc(String id) {
         return entries
                 .getOrDefault(id, new ArrayList<>())
                 .stream()
                 .max(Comparator.comparing(post -> post.datePosted));
+    }
+
+    @Override
+    public Optional<PostEntry> findByPostIdAndVersion(String id, int version) {
+        return entries.getOrDefault(id, new ArrayList<>()).stream().filter(p -> p.getVersion() == version).findFirst();
+    }
+
+    @Override
+    public List<PostEntry> findByPostId(String postId) {
+        return entries.get(postId);
     }
 
     @Override

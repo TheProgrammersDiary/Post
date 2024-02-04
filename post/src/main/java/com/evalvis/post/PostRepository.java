@@ -4,19 +4,21 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
-import org.springframework.data.jpa.repository.Query;
 
 import java.io.Serializable;
 import java.util.*;
 
 @Repository
 public interface PostRepository extends CrudRepository<PostRepository.PostEntry, String> {
-    @Query("SELECT p FROM post p WHERE p.datePosted = (SELECT MAX(p2.datePosted) FROM post p2 WHERE p2.id = p.id)")
+    @Query("SELECT p FROM post p WHERE p.datePosted = (SELECT MAX(p2.datePosted) FROM post p2 WHERE p2.postId = p.postId)")
     List<PostEntry> allPostsLatestVersions();
-    boolean existsByIdAndAuthorEmail(String id, String email);
-    Optional<PostEntry> findFirstByIdOrderByDatePostedDesc(String id);
+    boolean existsByPostIdAndAuthorEmail(String postId, String email);
+    Optional<PostEntry> findFirstByPostIdOrderByDatePostedDesc(String postId);
+    Optional<PostEntry> findByPostIdAndVersion(String postId, int version);
+    List<PostEntry> findByPostId(String postId);
 
     @Entity(name = "post")
     @IdClass(PostEntryId.class)
@@ -24,10 +26,9 @@ public interface PostRepository extends CrudRepository<PostRepository.PostEntry,
     class PostEntry {
         @Id
         @Column
-        private String id;
+        private String postId;
         @Id
         @Column
-        @GeneratedValue(strategy = GenerationType.IDENTITY)
         private int version;
         @CreationTimestamp
         @Temporal(TemporalType.TIMESTAMP)
@@ -46,11 +47,11 @@ public interface PostRepository extends CrudRepository<PostRepository.PostEntry,
         }
 
         public static PostEntry edited(String newTitle, PostEntry entry) {
-            return new PostEntry(entry.id, entry.version + 1, entry.authorName, entry.authorEmail, newTitle);
+            return new PostEntry(entry.postId, entry.version + 1, entry.authorName, entry.authorEmail, newTitle);
         }
 
-        private PostEntry(String id, int version, String authorName, String authorEmail, String title) {
-            this.id = id;
+        private PostEntry(String postId, int version, String authorName, String authorEmail, String title) {
+            this.postId = postId;
             this.version = version;
             this.datePosted = new Date();
             this.authorName = authorName;
@@ -60,8 +61,8 @@ public interface PostRepository extends CrudRepository<PostRepository.PostEntry,
 
         public PostEntry() {}
 
-        public String getId() {
-            return id;
+        public String getPostId() {
+            return postId;
         }
 
         public int getVersion() {
@@ -89,25 +90,24 @@ public interface PostRepository extends CrudRepository<PostRepository.PostEntry,
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             PostEntry postEntry = (PostEntry) o;
-            return Objects.equals(id, postEntry.id);
+            return Objects.equals(postId, postEntry.postId);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(id);
+            return Objects.hash(postId);
         }
     }
 
-    public class PostEntryId implements Serializable {
-        private String id;
-        @GeneratedValue(strategy = GenerationType.IDENTITY)
+    class PostEntryId implements Serializable {
+        private String postId;
         private int version;
 
         public PostEntryId() {
         }
 
-        public PostEntryId(String id, int version) {
-            this.id = id;
+        public PostEntryId(String postId, int version) {
+            this.postId = postId;
             this.version = version;
         }
 
@@ -116,12 +116,12 @@ public interface PostRepository extends CrudRepository<PostRepository.PostEntry,
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             PostEntryId that = (PostEntryId) o;
-            return version == that.version && id.equals(that.id);
+            return version == that.version && postId.equals(that.postId);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(id, version);
+            return Objects.hash(postId, version);
         }
     }
 }

@@ -109,17 +109,17 @@ public class ITPostTests {
                 .cookie(new Cookie.Builder("jwt", jwtToken.value()).build())
                 .post("/posts/create")
                 .as(PostRepository.PostEntry.class)
-                .getId();
+                .getPostId();
 
-        Post post = controller.getById(id, new FakeHttpServletRequest(), new FakeHttpServletResponse()).getBody();
+        Post post = controller.findLatestById(id, new FakeHttpServletRequest(), new FakeHttpServletResponse()).getBody();
 
-        expect.toMatchSnapshot(jsonWithMaskedProperties(post, "id"));
+        expect.toMatchSnapshot(jsonWithMaskedProperties(post, "postId"));
     }
 
     @Test
     void authorEditsPost() {
         setAuthentication("author@gmail.com");
-        String id = controller.create(newPost()).getBody().getId();
+        String id = controller.create(newPost()).getBody().getPostId();
         JwtToken jwtToken = jwtToken("author@gmail.com");
         HttpServletResponse response = new FakeHttpServletResponse();
 
@@ -134,17 +134,17 @@ public class ITPostTests {
                 .statusCode();
 
         assertEquals(200, statusCode);
-        Post editedPost = controller.getById(
+        Post editedPost = controller.findLatestById(
                 id, new FakeHttpServletRequest(Map.of("Authorization", "Bearer " + jwtToken.value())), response
         ).getBody();
         assertEquals("true", response.getHeader("IS-OWNER"));
-        expect.toMatchSnapshot(jsonWithMaskedProperties(editedPost, "id"));
+        expect.toMatchSnapshot(jsonWithMaskedProperties(editedPost, "postId"));
     }
 
     @Test
     void nonAuthorFailsToEditPost() {
         setAuthentication("author@gmail.com");
-        String id = controller.create(newPost()).getBody().getId();
+        String id = controller.create(newPost()).getBody().getPostId();
         JwtToken jwtToken = jwtToken("nonAuthor@gmail.com");
 
         int statusCode = given()
@@ -158,6 +158,25 @@ public class ITPostTests {
                 .statusCode();
 
         assertEquals(401, statusCode);
+    }
+
+    @Test
+    void findsPostOfEarlierVersion() {
+        setAuthentication("author@gmail.com");
+        String id = controller.create(newPost()).getBody().getPostId();
+
+        controller.edit(new EditedPost(id, "changed", "changed"));
+        controller.edit(new EditedPost(id, "changedAgain", "changedAgain"));
+
+        Response response = given()
+                .trustStore("blog.p12", sslPassword)
+                .baseUri("https://localhost:" + port)
+                .contentType("application/json")
+                .get("/posts/" + id + "/" + 2);
+
+        assertEquals(200, response.statusCode());
+
+        expect.toMatchSnapshot(jsonWithMaskedProperties(response.as(Post.class), "postId"));
     }
 
     private void setAuthentication(String email) {

@@ -14,15 +14,21 @@ public final class Post {
     }
 
     public static Optional<Post> existing(String id, PostRepository postRepository, ContentStorage contentStorage) {
-        return postRepository
-                .findFirstByIdOrderByDatePostedDesc(id)
-                .map(
-                        entry -> new Post(
-                                entry.getAuthorName(),
-                                entry.getTitle(),
-                                contentStorage.download(entry.getId(), entry.getVersion())
-                        )
-                );
+        return postRepository.findFirstByPostIdOrderByDatePostedDesc(id).map(entry -> post(entry, contentStorage));
+    }
+
+    public static Optional<Post> existing(
+            String id, int version, PostRepository postRepository, ContentStorage contentStorage
+    ) {
+        return postRepository.findByPostIdAndVersion(id, version).map(entry -> post(entry, contentStorage));
+    }
+
+    private static Post post(PostRepository.PostEntry entry, ContentStorage storage) {
+        return new Post(
+                entry.getAuthorName(),
+                entry.getTitle(),
+                storage.download(entry.getPostId(), entry.getVersion())
+        );
     }
 
     private Post(String author, String title, String content) {
@@ -37,7 +43,7 @@ public final class Post {
                         author, SecurityContextHolder.getContext().getAuthentication().getName(), title
                 )
         );
-        storage.upload(entry.getId(), entry.getVersion(), content);
+        storage.upload(entry.getPostId(), entry.getVersion(), content);
         return entry;
     }
 

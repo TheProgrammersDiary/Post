@@ -2,7 +2,7 @@ com.evalvis.post.PostTests.createsPost=[
   {
     "authorName": "author",
     "datePosted": "#hidden#",
-    "id": "#hidden#",
+    "postId": "#hidden#",
     "title": "title",
     "version": 1
   }
@@ -13,7 +13,51 @@ com.evalvis.post.PostTests.editsPost=[
   {
     "author": "author",
     "title": "changed",
-    "content": "changed",
-    "id": "#hidden#"
+    "content": "changed"
+  }
+]
+
+
+com.evalvis.post.PostTests.findsEarlierPost=[
+  {
+    "body": {
+      "author": "author",
+      "content": "initial",
+      "title": "title"
+    },
+    "headers": { },
+    "status": "OK"
+  }
+]
+
+
+com.evalvis.post.PostTests.getsDateVersionMapping=[
+  {
+    "headers": { },
+    "body": [
+      {
+        "authorName": "author",
+        "datePosted": "#hidden#",
+        "postId": "#hidden#",
+        "title": "title",
+        "version": 1
+      },
+      {
+        "authorName": "author",
+        "datePosted": "#hidden#",
+        "postId": "#hidden#",
+        "title": "changed",
+        "version": 2
+      },
+      {
+        "authorName": "author",
+        "datePosted": "#hidden#",
+        "postId": "#hidden#",
+        "title": "changedAgain",
+        "version": 2
+      }
+    ],
+    "statusCode": "OK",
+    "statusCodeValue": 200
   }
 ]
