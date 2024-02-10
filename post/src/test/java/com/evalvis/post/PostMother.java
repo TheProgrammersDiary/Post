@@ -22,9 +22,11 @@ public class PostMother {
         );
     }
 
-    public Post edit(EditedPost post) {
+    public Post edit(EditedPost post, int nextVersion) {
         int status = controller.edit(post).getStatusCode().value();
         assertEquals(200, status);
-        return controller.findLatestById(post.getId(), new FakeHttpServletRequest(), new FakeHttpServletResponse()).getBody();
+        return controller
+                .findByIdAndVersion(post.getId(), nextVersion, new FakeHttpServletRequest(), new FakeHttpServletResponse())
+                .getBody();
     }
 }

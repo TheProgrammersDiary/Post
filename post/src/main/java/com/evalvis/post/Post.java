@@ -13,10 +13,6 @@ public final class Post {
         return new Post(author, title, content);
     }
 
-    public static Optional<Post> existing(String id, PostRepository postRepository, ContentStorage contentStorage) {
-        return postRepository.findFirstByPostIdOrderByDatePostedDesc(id).map(entry -> post(entry, contentStorage));
-    }
-
     public static Optional<Post> existing(
             String id, int version, PostRepository postRepository, ContentStorage contentStorage
     ) {

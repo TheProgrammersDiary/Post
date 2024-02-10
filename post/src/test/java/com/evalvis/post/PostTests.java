@@ -3,7 +3,6 @@ package com.evalvis.post;
 import au.com.origin.snapshots.Expect;
 import au.com.origin.snapshots.junit5.SnapshotExtension;
 import com.evalvis.post.logging.RestNotFoundException;
-import com.evalvis.security.BlacklistedJwtTokenRepository;
 import com.evalvis.security.JwtKey;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,14 +28,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class PostTests {
     private Expect expect;
     private final PostRepository repository;
-    private final BlacklistedJwtTokenRepository blacklistedJwtTokenRepository;
     private final JwtKey jwtKey;
     private final PostController controller;
     private final PostMother mother;
 
     public PostTests() {
         this.repository = new FakePostRepository();
-        this.blacklistedJwtTokenRepository = new BlacklistedJwtTokenFakeRepository();
         this.jwtKey = new JwtKey() {
             @Override
             public SecretKey value() {
@@ -48,9 +45,7 @@ public class PostTests {
                 );
             }
         };
-        this.controller = new PostController(
-                repository, new FakeMinioStorage(), new BlacklistedJwtTokenFakeRepository(), jwtKey
-        );
+        this.controller = new PostController(repository, new FakeMinioStorage(), jwtKey);
         this.mother = new PostMother(this.controller);
     }
 
@@ -70,18 +65,18 @@ public class PostTests {
 
     @Test
     void editsPost() {
-        PostRepository.PostEntry post = mother.create("initial");
+        PostRepository.PostEntry post = mother.create("first");
 
-        Post editedPost = mother.edit(new EditedPost(post.getPostId(), "changed", "changed"));
+        Post editedPost = mother.edit(new EditedPost(post.getPostId(), "second", "second"), 2);
 
         expect.toMatchSnapshot(jsonWithMaskedProperties(editedPost, "postId"));
     }
 
     @Test
     void findsEarlierPost() {
-        PostRepository.PostEntry post = mother.create("initial");
+        PostRepository.PostEntry post = mother.create("earlier");
 
-        mother.edit(new EditedPost(post.getPostId(), "changed", "changed"));
+        mother.edit(new EditedPost(post.getPostId(), "newer", "newer"), 2);
 
         expect.toMatchSnapshot(
                 controller.findByIdAndVersion(
@@ -93,18 +88,18 @@ public class PostTests {
     @Test
     void getsDateVersionMapping() {
         String id = mother.create("initial").getPostId();
-        mother.edit(new EditedPost(id, "changed", "changed"));
-        mother.edit(new EditedPost(id, "changedAgain", "changedAgain"));
+        mother.edit(new EditedPost(id, "changed", "changed"), 2);
+        mother.edit(new EditedPost(id, "changedAgain", "changedAgain"), 3);
 
         expect.toMatchSnapshot(
-                jsonWithMaskedProperties(controller.getDateVersionMapping(id), "postId", "datePosted")
+                jsonWithMaskedProperties(controller.getDateVersionMapping(id).getBody(), "postId", "datePosted")
         );
     }
 
-    private <T> ObjectNode jsonWithMaskedProperties(T object, String... properties) {
+    private <T> JsonNode jsonWithMaskedProperties(T object, String... properties) {
         try {
-            ObjectNode node = new ObjectMapper().valueToTree(object);
-            Arrays.stream(properties).forEach(property -> maskField(node, property));
+            JsonNode node = new ObjectMapper().valueToTree(object);
+            node.forEach(n -> Arrays.stream(properties).forEach(property -> maskField(node, property)));
             return node;
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -129,8 +124,8 @@ public class PostTests {
     void findsPost() {
         PostRepository.PostEntry initialPost = mother.create("content");
 
-        Post foundPost = controller.findLatestById(
-                initialPost.getPostId(), new FakeHttpServletRequest(), new FakeHttpServletResponse()
+        Post foundPost = controller.findByIdAndVersion(
+                initialPost.getPostId(), 1, new FakeHttpServletRequest(), new FakeHttpServletResponse()
         ).getBody();
 
         assertEquals(initialPost.getAuthorName(), foundPost.getAuthor());
@@ -155,8 +150,8 @@ public class PostTests {
     void throwsExceptionIfSearchedPostDoesNotExist() {
         Exception e = assertThrows(
                 RestNotFoundException.class,
-                () -> controller.findLatestById(
-                        "not-existing-id", new FakeHttpServletRequest(), new FakeHttpServletResponse()
+                () -> controller.findByIdAndVersion(
+                        "not-existing-id", 1, new FakeHttpServletRequest(), new FakeHttpServletResponse()
                 )
         );
         assertEquals("Post with id: not-existing-id not found.", e.getMessage());

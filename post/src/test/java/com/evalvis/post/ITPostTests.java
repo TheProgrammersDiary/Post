@@ -2,13 +2,12 @@ package com.evalvis.post;
 
 import au.com.origin.snapshots.Expect;
 import au.com.origin.snapshots.junit5.SnapshotExtension;
-import com.evalvis.security.BlacklistedJwtTokenRepository;
 import com.evalvis.security.JwtKey;
-import com.evalvis.security.JwtToken;
+import com.evalvis.security.JwtRefreshToken;
+import com.evalvis.security.JwtShortLivedToken;
 import com.evalvis.security.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import io.restassured.http.Cookie;
 import io.restassured.response.Response;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.AfterAll;
@@ -39,7 +38,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @ActiveProfiles("it")
 public class ITPostTests {
     private Expect expect;
-
     @Value("${local.server.port}")
     private int port;
 
@@ -48,20 +46,11 @@ public class ITPostTests {
     @Autowired
     private JwtKey key;
     @Autowired
-    private BlacklistedJwtTokenRepository blacklistedJwtTokenRepository;
-    @Autowired
     private PostController controller;
     @Value("${server.ssl.key-store-password}")
     private String sslPassword;
-    @Value("${minio.password}")
-    private String minioPassword;
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     private static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15.4");
-    private static final GenericContainer<?> redis = new GenericContainer<>(
-            "redis:latest"
-    ).withExposedPorts(6379);
-
     private static final GenericContainer<?> minio = new GenericContainer<>(
             "minio/minio:RELEASE.2023-06-29T05-12-28Z.fips"
     )
@@ -76,43 +65,41 @@ public class ITPostTests {
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
 
-        registry.add("spring.data.redis.host", redis::getHost);
-        registry.add("spring.data.redis.port", redis::getFirstMappedPort);
-
         registry.add("minio.url", () -> "http://" + minio.getHost() + ":" + minio.getFirstMappedPort());
+        registry.add("minio.bucket", () -> "posts");
+        registry.add("minio.username", () -> "admin");
+        registry.add("minio.password", () -> "administrator");
     }
 
     @BeforeAll
     static void beforeAll() {
         postgres.start();
-        redis.start();
         minio.start();
     }
 
     @AfterAll
     static void afterAll() {
         postgres.stop();
-        redis.stop();
         minio.stop();
     }
 
     @Test
     void createsPost() {
-        JwtToken jwtToken = jwtToken();
+        JwtShortLivedToken jwtToken = jwtToken("tester@gmail.com");
 
         String id = given()
                 .trustStore("blog.p12", sslPassword)
                 .baseUri("https://localhost:" + port)
                 .contentType("application/json")
-                .header("X-CSRF-TOKEN", jwtToken.csrfToken())
                 .body(newPost())
-                .cookie(new Cookie.Builder("jwt", jwtToken.value()).build())
+                .header("AUTHORIZATION", "Bearer " + jwtToken.value())
                 .post("/posts/create")
                 .as(PostRepository.PostEntry.class)
                 .getPostId();
 
-        Post post = controller.findLatestById(id, new FakeHttpServletRequest(), new FakeHttpServletResponse()).getBody();
-
+        Post post = controller
+                .findByIdAndVersion(id, 1, new FakeHttpServletRequest(), new FakeHttpServletResponse())
+                .getBody();
         expect.toMatchSnapshot(jsonWithMaskedProperties(post, "postId"));
     }
 
@@ -120,22 +107,21 @@ public class ITPostTests {
     void authorEditsPost() {
         setAuthentication("author@gmail.com");
         String id = controller.create(newPost()).getBody().getPostId();
-        JwtToken jwtToken = jwtToken("author@gmail.com");
+        JwtShortLivedToken jwtToken = jwtToken("author@gmail.com");
         HttpServletResponse response = new FakeHttpServletResponse();
 
         int statusCode = given()
                 .trustStore("blog.p12", sslPassword)
                 .baseUri("https://localhost:" + port)
                 .contentType("application/json")
-                .header("X-CSRF-TOKEN", jwtToken.csrfToken())
                 .body(new EditedPost(id, "edited", "edited"))
-                .cookie(new Cookie.Builder("jwt", jwtToken.value()).build())
+                .header("AUTHORIZATION", "Bearer " + jwtToken.value())
                 .put("/posts/edit")
                 .statusCode();
 
         assertEquals(200, statusCode);
-        Post editedPost = controller.findLatestById(
-                id, new FakeHttpServletRequest(Map.of("Authorization", "Bearer " + jwtToken.value())), response
+        Post editedPost = controller.findByIdAndVersion(
+                id, 2, new FakeHttpServletRequest(Map.of("Authorization", "Bearer " + jwtToken.value())), response
         ).getBody();
         assertEquals("true", response.getHeader("IS-OWNER"));
         expect.toMatchSnapshot(jsonWithMaskedProperties(editedPost, "postId"));
@@ -145,15 +131,14 @@ public class ITPostTests {
     void nonAuthorFailsToEditPost() {
         setAuthentication("author@gmail.com");
         String id = controller.create(newPost()).getBody().getPostId();
-        JwtToken jwtToken = jwtToken("nonAuthor@gmail.com");
+        JwtShortLivedToken jwtToken = jwtToken("nonAuthor@gmail.com");
 
         int statusCode = given()
                 .trustStore("blog.p12", sslPassword)
                 .baseUri("https://localhost:" + port)
                 .contentType("application/json")
-                .header("X-CSRF-TOKEN", jwtToken.csrfToken())
                 .body(new EditedPost(id, "edited", "edited"))
-                .cookie(new Cookie.Builder("jwt", jwtToken.value()).build())
+                .header("AUTHORIZATION", "Bearer " + jwtToken.value())
                 .put("/posts/edit")
                 .statusCode();
 
@@ -175,7 +160,6 @@ public class ITPostTests {
                 .get("/posts/" + id + "/" + 2);
 
         assertEquals(200, response.statusCode());
-
         expect.toMatchSnapshot(jsonWithMaskedProperties(response.as(Post.class), "postId"));
     }
 
@@ -185,32 +169,10 @@ public class ITPostTests {
         SecurityContextHolder.setContext(securityContext);
     }
 
-    @Test
-    public void authorizedRequestWithoutCsrfFails() {
-        JwtToken jwtToken = jwtToken();
-
-        Response response = given()
-                .trustStore("blog.p12", sslPassword)
-                .baseUri("https://localhost:" + port)
-                .contentType("application/json")
-                .body(newPost())
-                .cookie(new Cookie.Builder("jwt", jwtToken.value()).build())
-                .post("/posts/create");
-
-        assertEquals(401, response.statusCode());
-    }
-
-    private JwtToken jwtToken() {
-        return jwtToken("tester@gmail.com");
-    }
-
-    private JwtToken jwtToken(String email) {
-        return JwtToken.create(
-                new UsernamePasswordAuthenticationToken(
-                        new User(email, null), null, null
-                ),
-                key.value(),
-                blacklistedJwtTokenRepository
+    private JwtShortLivedToken jwtToken(String email) {
+        return JwtShortLivedToken.create(
+                JwtRefreshToken.create(new UsernamePasswordAuthenticationToken(new User(email, null), null, null), key.value()),
+                key.value()
         );
     }
 

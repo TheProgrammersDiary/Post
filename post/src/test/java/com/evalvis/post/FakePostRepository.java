@@ -50,11 +50,11 @@ public class FakePostRepository implements PostRepository {
     }
 
     @Override
-    public Optional<PostEntry> findFirstByPostIdOrderByDatePostedDesc(String id) {
+    public Optional<PostEntry> findFirstByPostIdOrderByVersionDesc(String id) {
         return entries
                 .getOrDefault(id, new ArrayList<>())
                 .stream()
-                .max(Comparator.comparing(post -> post.datePosted));
+                .max(Comparator.comparing(PostEntry::getVersion));
     }
 
     @Override

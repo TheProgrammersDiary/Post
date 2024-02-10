@@ -2,9 +2,10 @@ package com.evalvis.post;
 
 import com.evalvis.post.logging.RestNotFoundException;
 import com.evalvis.post.logging.UnauthorizedException;
-import com.evalvis.security.BlacklistedJwtTokenRepository;
 import com.evalvis.security.JwtKey;
-import com.evalvis.security.JwtToken;
+import com.evalvis.security.JwtShortLivedToken;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,19 +21,12 @@ import java.util.List;
 final class PostController {
     private final PostRepository repo;
     private final ContentStorage contentStorage;
-    private final BlacklistedJwtTokenRepository blacklistedJwtTokenRepository;
     private final JwtKey key;
 
     @Autowired
-    PostController(
-            PostRepository repo,
-            ContentStorage contentStorage,
-            BlacklistedJwtTokenRepository blacklistedJwtTokenRepository,
-            JwtKey key
-    ) {
+    PostController(PostRepository repo, ContentStorage contentStorage, JwtKey key) {
         this.repo = repo;
         this.contentStorage = contentStorage;
-        this.blacklistedJwtTokenRepository = blacklistedJwtTokenRepository;
         this.key = key;
     }
 
@@ -56,24 +50,16 @@ final class PostController {
                 .orElseThrow(() -> new RestNotFoundException("Post with id: " + id + " not found."));
     }
 
-    @GetMapping(value = "/{id}")
-    ResponseEntity<Post> findLatestById(
-            @PathVariable String id, HttpServletRequest request, HttpServletResponse response
-    ) {
-        return Post
-                .existing(id, repo, contentStorage)
-                .map(post -> {
-                    addOwnerHeader(id, request, response);
-                    return ResponseEntity.ok(post);
-                })
-                .orElseThrow(() -> new RestNotFoundException("Post with id: " + id + " not found."));
-    }
-
     private void addOwnerHeader(String postId, HttpServletRequest request, HttpServletResponse response) {
-        boolean isOwner = JwtToken
-                .existing(request, key.value(), blacklistedJwtTokenRepository)
-                .map(token -> repo.existsByPostIdAndAuthorEmail(postId, token.email()))
-                .orElse(false);
+        boolean isOwner;
+        try {
+            isOwner = JwtShortLivedToken
+                    .existing(request, key.value())
+                    .map(token -> repo.existsByPostIdAndAuthorEmail(postId, token.email()))
+                    .orElse(false);
+        } catch(MalformedJwtException | ExpiredJwtException e) {
+            isOwner = false;
+        }
         response.addHeader("IS-OWNER", String.valueOf(isOwner));
     }
 

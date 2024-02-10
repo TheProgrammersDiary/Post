@@ -4,6 +4,7 @@ import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 
+import javax.swing.text.html.Option;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.*;
@@ -11,7 +12,7 @@ import java.util.*;
 public class FakeHttpServletResponse implements HttpServletResponse {
     private final Map<String, String> headers = new HashMap<>();
     private final PrintWriter writer = new PrintWriter(new StringWriter());
-    private Optional<String> redirectLocation;
+    private Optional<String> redirectLocation = Optional.empty();
     @Override
     public void addCookie(Cookie cookie) {
         throw new UnsupportedOperationException("Not implemented");

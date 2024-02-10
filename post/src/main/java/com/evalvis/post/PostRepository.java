@@ -16,7 +16,7 @@ public interface PostRepository extends CrudRepository<PostRepository.PostEntry,
     @Query("SELECT p FROM post p WHERE p.datePosted = (SELECT MAX(p2.datePosted) FROM post p2 WHERE p2.postId = p.postId)")
     List<PostEntry> allPostsLatestVersions();
     boolean existsByPostIdAndAuthorEmail(String postId, String email);
-    Optional<PostEntry> findFirstByPostIdOrderByDatePostedDesc(String postId);
+    Optional<PostEntry> findFirstByPostIdOrderByVersionDesc(String postId);
     Optional<PostEntry> findByPostIdAndVersion(String postId, int version);
     List<PostEntry> findByPostId(String postId);
 

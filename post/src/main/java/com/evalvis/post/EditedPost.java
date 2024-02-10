@@ -13,7 +13,7 @@ public class EditedPost {
 
     public void edit(PostRepository repository, ContentStorage storage) {
         repository
-                .findFirstByPostIdOrderByDatePostedDesc(id)
+                .findFirstByPostIdOrderByVersionDesc(id)
                 .ifPresent(entry -> {
                     storage.upload(entry.getPostId(), entry.getVersion() + 1, content);
                     repository.save(PostRepository.PostEntry.edited(title, entry));
