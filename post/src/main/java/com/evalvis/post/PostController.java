@@ -69,9 +69,14 @@ final class PostController {
     }
 
     @PostMapping(value = "/create")
-    ResponseEntity<PostRepository.PostEntry> create(@RequestBody Post post)
+    ResponseEntity<PostRepository.PostEntry> create(HttpServletRequest request, @RequestBody Post.PostRequest postRequest)
     {
-        return ResponseEntity.ok(post.save(repo, contentStorage));
+        ;
+        return ResponseEntity.ok(
+                postRequest
+                        .toPost(JwtShortLivedToken.existing(request, key.value()).get().username())
+                        .save(repo, contentStorage)
+        );
     }
 
     @PutMapping(value = "/edit")

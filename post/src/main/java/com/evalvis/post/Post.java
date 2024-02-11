@@ -9,7 +9,7 @@ public final class Post {
     private final String title;
     private final String content;
 
-    public static Post newlyCreated(String author, String title, String content) {
+    private static Post newlyCreated(String author, String title, String content) {
         return new Post(author, title, content);
     }
 
@@ -53,5 +53,27 @@ public final class Post {
 
     public String getContent() {
         return content;
+    }
+
+    public static final class PostRequest {
+        private final String title;
+        private final String content;
+
+        public PostRequest(String title, String content) {
+            this.title = title;
+            this.content = content;
+        }
+
+        public Post toPost(String author) {
+            return Post.newlyCreated(author, title, content);
+        }
+
+        public String getTitle() {
+            return title;
+        }
+
+        public String getContent() {
+            return content;
+        }
     }
 }

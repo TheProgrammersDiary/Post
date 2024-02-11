@@ -1,6 +1,6 @@
 com.evalvis.post.PostTests.createsPost=[
   {
-    "authorName": "author",
+    "authorName": "u",
     "datePosted": "#hidden#",
     "postId": "#hidden#",
     "title": "title",
@@ -11,7 +11,7 @@ com.evalvis.post.PostTests.createsPost=[
 
 com.evalvis.post.PostTests.editsPost=[
   {
-    "author": "author",
+    "author": "a",
     "title": "second",
     "content": "second"
   }
@@ -21,7 +21,7 @@ com.evalvis.post.PostTests.editsPost=[
 com.evalvis.post.PostTests.findsEarlierPost=[
   {
     "body": {
-      "author": "author",
+      "author": "b",
       "content": "earlier",
       "title": "title"
     },
@@ -34,21 +34,21 @@ com.evalvis.post.PostTests.findsEarlierPost=[
 com.evalvis.post.PostTests.getsDateVersionMapping=[
   [
     {
-      "authorName": "author",
+      "authorName": "c",
       "datePosted": "#hidden#",
       "postId": "#hidden#",
       "title": "title",
       "version": 1
     },
     {
-      "authorName": "author",
+      "authorName": "c",
       "datePosted": "#hidden#",
       "postId": "#hidden#",
       "title": "changed",
       "version": 2
     },
     {
-      "authorName": "author",
+      "authorName": "c",
       "datePosted": "#hidden#",
       "postId": "#hidden#",
       "title": "changedAgain",

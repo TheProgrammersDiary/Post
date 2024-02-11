@@ -46,7 +46,7 @@ public class PostTests {
             }
         };
         this.controller = new PostController(repository, new FakeMinioStorage(), jwtKey);
-        this.mother = new PostMother(this.controller);
+        this.mother = new PostMother(this.controller, jwtKey);
     }
 
     @BeforeAll
@@ -58,14 +58,14 @@ public class PostTests {
 
     @Test
     void createsPost() {
-        PostRepository.PostEntry post = mother.create("content");
+        PostRepository.PostEntry post = mother.create(mother.request("u", "u@gmail.com"), "content");
 
         expect.toMatchSnapshot(jsonWithMaskedProperties(post, "postId", "datePosted"));
     }
 
     @Test
     void editsPost() {
-        PostRepository.PostEntry post = mother.create("first");
+        PostRepository.PostEntry post = mother.create(mother.request("a", "a@gmail.com"), "first");
 
         Post editedPost = mother.edit(new EditedPost(post.getPostId(), "second", "second"), 2);
 
@@ -74,7 +74,7 @@ public class PostTests {
 
     @Test
     void findsEarlierPost() {
-        PostRepository.PostEntry post = mother.create("earlier");
+        PostRepository.PostEntry post = mother.create(mother.request("b", "b@gmail.com"), "earlier");
 
         mother.edit(new EditedPost(post.getPostId(), "newer", "newer"), 2);
 
@@ -87,7 +87,7 @@ public class PostTests {
 
     @Test
     void getsDateVersionMapping() {
-        String id = mother.create("initial").getPostId();
+        String id = mother.create(mother.request("c", "c@gmail.com"), "initial").getPostId();
         mother.edit(new EditedPost(id, "changed", "changed"), 2);
         mother.edit(new EditedPost(id, "changedAgain", "changedAgain"), 3);
 
@@ -122,7 +122,7 @@ public class PostTests {
 
     @Test
     void findsPost() {
-        PostRepository.PostEntry initialPost = mother.create("content");
+        PostRepository.PostEntry initialPost = mother.create(mother.request("d", "d@gmail.com"), "content");
 
         Post foundPost = controller.findByIdAndVersion(
                 initialPost.getPostId(), 1, new FakeHttpServletRequest(), new FakeHttpServletResponse()
@@ -135,7 +135,7 @@ public class PostTests {
 
     @Test
     void findsAllPosts() {
-        List<PostRepository.PostEntry> initialPosts = mother.createMultiple();
+        List<PostRepository.PostEntry> initialPosts = mother.createMultiple(mother.request("e", "e@gmail.com"));
 
         List<PostRepository.PostEntry> foundPosts = new ArrayList<>(controller.getAll().getBody());
 

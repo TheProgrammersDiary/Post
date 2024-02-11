@@ -1,6 +1,6 @@
 com.evalvis.post.ITPostTests.authorEditsPost=[
   {
-    "author": "Human",
+    "author": "author",
     "title": "edited",
     "content": "edited",
     "postId": "#hidden#"
@@ -10,7 +10,7 @@ com.evalvis.post.ITPostTests.authorEditsPost=[
 
 com.evalvis.post.ITPostTests.createsPost=[
   {
-    "author": "Human",
+    "author": "tester",
     "title": "Testing matters",
     "content": "You either test first, test along coding, or don't test at all.",
     "postId": "#hidden#"
@@ -20,7 +20,7 @@ com.evalvis.post.ITPostTests.createsPost=[
 
 com.evalvis.post.ITPostTests.findsPostOfEarlierVersion=[
   {
-    "author": "Human",
+    "author": "author",
     "title": "changed",
     "content": "changed",
     "postId": "#hidden#"

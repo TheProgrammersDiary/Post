@@ -3,9 +3,7 @@ package com.evalvis.post;
 import au.com.origin.snapshots.Expect;
 import au.com.origin.snapshots.junit5.SnapshotExtension;
 import com.evalvis.security.JwtKey;
-import com.evalvis.security.JwtRefreshToken;
 import com.evalvis.security.JwtShortLivedToken;
-import com.evalvis.security.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.restassured.response.Response;
@@ -18,7 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
@@ -43,12 +40,11 @@ public class ITPostTests {
 
     @Autowired
     private TestRestTemplate restTemplate;
-    @Autowired
     private JwtKey key;
-    @Autowired
     private PostController controller;
     @Value("${server.ssl.key-store-password}")
     private String sslPassword;
+    private PostMother mother;
 
     private static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15.4");
     private static final GenericContainer<?> minio = new GenericContainer<>(
@@ -71,6 +67,13 @@ public class ITPostTests {
         registry.add("minio.password", () -> "administrator");
     }
 
+    @Autowired
+    public ITPostTests(JwtKey key, PostController controller) {
+        this.key = key;
+        this.controller = controller;
+        this.mother = new PostMother(controller, key);
+    }
+
     @BeforeAll
     static void beforeAll() {
         postgres.start();
@@ -85,13 +88,13 @@ public class ITPostTests {
 
     @Test
     void createsPost() {
-        JwtShortLivedToken jwtToken = jwtToken("tester", "tester@gmail.com");
+        JwtShortLivedToken jwtToken = mother.jwtToken("tester", "tester@gmail.com");
 
         String id = given()
                 .trustStore("blog.p12", sslPassword)
                 .baseUri("https://localhost:" + port)
                 .contentType("application/json")
-                .body(newPost())
+                .body(newPostRequest())
                 .header("AUTHORIZATION", "Bearer " + jwtToken.value())
                 .post("/posts/create")
                 .as(PostRepository.PostEntry.class)
@@ -106,8 +109,10 @@ public class ITPostTests {
     @Test
     void authorEditsPost() {
         setAuthentication("author@gmail.com");
-        String id = controller.create(newPost()).getBody().getPostId();
-        JwtShortLivedToken jwtToken = jwtToken("author", "author@gmail.com");
+        String id = controller.create(
+                mother.request("author", "author@gmail.com"), newPostRequest()
+        ).getBody().getPostId();
+        JwtShortLivedToken jwtToken = mother.jwtToken("author", "author@gmail.com");
         HttpServletResponse response = new FakeHttpServletResponse();
 
         int statusCode = given()
@@ -130,15 +135,17 @@ public class ITPostTests {
     @Test
     void nonAuthorFailsToEditPost() {
         setAuthentication("author@gmail.com");
-        String id = controller.create(newPost()).getBody().getPostId();
-        JwtShortLivedToken jwtToken = jwtToken("nonAuthor", "nonAuthor@gmail.com");
+        String id = controller.create(
+                mother.request("author", "author@gmail.com"), newPostRequest()
+        ).getBody().getPostId();
+        JwtShortLivedToken nonAuthorJwtToken = mother.jwtToken("nonAuthor", "nonAuthor@gmail.com");
 
         int statusCode = given()
                 .trustStore("blog.p12", sslPassword)
                 .baseUri("https://localhost:" + port)
                 .contentType("application/json")
                 .body(new EditedPost(id, "edited", "edited"))
-                .header("AUTHORIZATION", "Bearer " + jwtToken.value())
+                .header("AUTHORIZATION", "Bearer " + nonAuthorJwtToken.value())
                 .put("/posts/edit")
                 .statusCode();
 
@@ -148,7 +155,9 @@ public class ITPostTests {
     @Test
     void findsPostOfEarlierVersion() {
         setAuthentication("author@gmail.com");
-        String id = controller.create(newPost()).getBody().getPostId();
+        String id = controller.create(
+                mother.request("author", "author@gmail.com"), newPostRequest()
+        ).getBody().getPostId();
 
         controller.edit(new EditedPost(id, "changed", "changed"));
         controller.edit(new EditedPost(id, "changedAgain", "changedAgain"));
@@ -169,23 +178,8 @@ public class ITPostTests {
         SecurityContextHolder.setContext(securityContext);
     }
 
-    private JwtShortLivedToken jwtToken(String username, String email) {
-        return JwtShortLivedToken.create(
-                JwtRefreshToken.create(
-                        username,
-                        new UsernamePasswordAuthenticationToken(new User(email, null), null, null),
-                        key.value()
-                ),
-                key.value()
-        );
-    }
-
-    private Post newPost() {
-        return Post.newlyCreated(
-                "Human",
-                "Testing matters",
-                "You either test first, test along coding, or don't test at all."
-        );
+    private Post.PostRequest newPostRequest() {
+        return new Post.PostRequest("Testing matters", "You either test first, test along coding, or don't test at all.");
     }
 
     private <T> ObjectNode jsonWithMaskedProperties(T object, String... properties) {
