@@ -26,7 +26,7 @@ public class MinioStorage implements ContentStorage {
             InputStream stream = new ByteArrayInputStream(content.getBytes());
             minioClient.putObject(PutObjectArgs.builder()
                     .bucket(bucket)
-                    .object(objectId + "_v" + version)
+                    .object(objectId + "/v" + version)
                     .stream(stream, stream.available(), -1)
                     .build());
         } catch (MinioException | IOException | InvalidKeyException | NoSuchAlgorithmException e) {
@@ -39,7 +39,7 @@ public class MinioStorage implements ContentStorage {
         try {
             InputStream stream = minioClient.getObject(GetObjectArgs.builder()
                     .bucket(bucket)
-                    .object(objectId + "_v" + version)
+                    .object(objectId + "/v" + version)
                     .build());
             return new BufferedReader(new InputStreamReader(stream))
                     .lines()
