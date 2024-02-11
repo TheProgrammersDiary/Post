@@ -71,7 +71,6 @@ final class PostController {
     @PostMapping(value = "/create")
     ResponseEntity<PostRepository.PostEntry> create(HttpServletRequest request, @RequestBody Post.PostRequest postRequest)
     {
-        ;
         return ResponseEntity.ok(
                 postRequest
                         .toPost(JwtShortLivedToken.existing(request, key.value()).get().username())
