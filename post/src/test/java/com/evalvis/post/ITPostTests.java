@@ -85,7 +85,7 @@ public class ITPostTests {
 
     @Test
     void createsPost() {
-        JwtShortLivedToken jwtToken = jwtToken("tester@gmail.com");
+        JwtShortLivedToken jwtToken = jwtToken("tester", "tester@gmail.com");
 
         String id = given()
                 .trustStore("blog.p12", sslPassword)
@@ -107,7 +107,7 @@ public class ITPostTests {
     void authorEditsPost() {
         setAuthentication("author@gmail.com");
         String id = controller.create(newPost()).getBody().getPostId();
-        JwtShortLivedToken jwtToken = jwtToken("author@gmail.com");
+        JwtShortLivedToken jwtToken = jwtToken("author", "author@gmail.com");
         HttpServletResponse response = new FakeHttpServletResponse();
 
         int statusCode = given()
@@ -131,7 +131,7 @@ public class ITPostTests {
     void nonAuthorFailsToEditPost() {
         setAuthentication("author@gmail.com");
         String id = controller.create(newPost()).getBody().getPostId();
-        JwtShortLivedToken jwtToken = jwtToken("nonAuthor@gmail.com");
+        JwtShortLivedToken jwtToken = jwtToken("nonAuthor", "nonAuthor@gmail.com");
 
         int statusCode = given()
                 .trustStore("blog.p12", sslPassword)
@@ -169,9 +169,13 @@ public class ITPostTests {
         SecurityContextHolder.setContext(securityContext);
     }
 
-    private JwtShortLivedToken jwtToken(String email) {
+    private JwtShortLivedToken jwtToken(String username, String email) {
         return JwtShortLivedToken.create(
-                JwtRefreshToken.create(new UsernamePasswordAuthenticationToken(new User(email, null), null, null), key.value()),
+                JwtRefreshToken.create(
+                        username,
+                        new UsernamePasswordAuthenticationToken(new User(email, null), null, null),
+                        key.value()
+                ),
                 key.value()
         );
     }
