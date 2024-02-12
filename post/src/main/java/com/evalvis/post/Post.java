@@ -1,5 +1,7 @@
 package com.evalvis.post;
 
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Safelist;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Optional;
@@ -64,8 +66,8 @@ public final class Post {
             this.content = content;
         }
 
-        public Post toPost(String author) {
-            return Post.newlyCreated(author, title, content);
+        public Post toPost(String author, Safelist safelist) {
+            return Post.newlyCreated(author, title, Jsoup.clean(content, safelist));
         }
 
         public String getTitle() {

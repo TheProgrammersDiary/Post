@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.assertj.core.api.Assertions;
+import org.jsoup.safety.Safelist;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,7 +46,7 @@ public class PostTests {
                 );
             }
         };
-        this.controller = new PostController(repository, new FakeMinioStorage(), jwtKey);
+        this.controller = new PostController(repository, new FakeMinioStorage(), jwtKey, Safelist.basicWithImages());
         this.mother = new PostMother(this.controller, jwtKey);
     }
 

@@ -8,6 +8,7 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.jsoup.safety.Safelist;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,12 +23,14 @@ final class PostController {
     private final PostRepository repo;
     private final ContentStorage contentStorage;
     private final JwtKey key;
+    private final Safelist safelist;
 
     @Autowired
-    PostController(PostRepository repo, ContentStorage contentStorage, JwtKey key) {
+    PostController(PostRepository repo, ContentStorage contentStorage, JwtKey key, Safelist safelist) {
         this.repo = repo;
         this.contentStorage = contentStorage;
         this.key = key;
+        this.safelist = safelist;
     }
 
     @GetMapping
@@ -73,7 +76,7 @@ final class PostController {
     {
         return ResponseEntity.ok(
                 postRequest
-                        .toPost(JwtShortLivedToken.existing(request, key.value()).get().username())
+                        .toPost(JwtShortLivedToken.existing(request, key.value()).get().username(), safelist)
                         .save(repo, contentStorage)
         );
     }
