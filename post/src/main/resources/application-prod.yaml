@@ -9,7 +9,7 @@ server:
     key-alias: blog
     key-password: ${ssl_blog_passphrase}
 minio:
-  url: http://${minio_url}
+  url: ${minio_url}
   bucket: posts
   username: admin
   password: ${minio_password}
