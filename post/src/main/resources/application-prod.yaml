@@ -1,5 +1,5 @@
 post:
-  frontend-url: "https://localhost:3000"
+  frontend-url: ${frontend_url}
   http-masking-turned-on: true
 server:
   ssl:
