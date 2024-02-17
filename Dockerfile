@@ -1,6 +1,6 @@
-FROM eclipse-temurin:17
+FROM adoptopenjdk/openjdk17:alpine-jre
 
-WORKDIR /app/
+WORKDIR /app
 COPY post/target/post*.jar /app/post.jar
 
 EXPOSE 8081
