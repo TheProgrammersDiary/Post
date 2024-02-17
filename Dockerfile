@@ -1,4 +1,4 @@
-FROM adoptopenjdk/openjdk17:alpine-jre
+FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
 COPY post/target/post*.jar /app/post.jar
