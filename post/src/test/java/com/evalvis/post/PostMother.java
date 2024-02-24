@@ -52,7 +52,7 @@ public class PostMother {
     }
 
 
-    public Post edit(EditedPost post, int nextVersion) {
+    public Post edit(EditedPost.EditedPostRequest post, int nextVersion) {
         int status = controller.edit(post).getStatusCode().value();
         assertEquals(200, status);
         return controller

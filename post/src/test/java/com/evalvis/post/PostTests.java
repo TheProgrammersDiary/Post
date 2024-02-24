@@ -68,7 +68,9 @@ public class PostTests {
     void editsPost() {
         PostRepository.PostEntry post = mother.create(mother.request("a", "a@gmail.com"), "first");
 
-        Post editedPost = mother.edit(new EditedPost(post.getPostId(), "second", "second"), 2);
+        Post editedPost = mother.edit(
+                new EditedPost.EditedPostRequest(post.getPostId(), "second", "second"), 2
+        );
 
         expect.toMatchSnapshot(jsonWithMaskedProperties(editedPost, "postId"));
     }
@@ -77,7 +79,7 @@ public class PostTests {
     void findsEarlierPost() {
         PostRepository.PostEntry post = mother.create(mother.request("b", "b@gmail.com"), "earlier");
 
-        mother.edit(new EditedPost(post.getPostId(), "newer", "newer"), 2);
+        mother.edit(new EditedPost.EditedPostRequest(post.getPostId(), "newer", "newer"), 2);
 
         expect.toMatchSnapshot(
                 controller.findByIdAndVersion(
@@ -89,8 +91,8 @@ public class PostTests {
     @Test
     void getsDateVersionMapping() {
         String id = mother.create(mother.request("c", "c@gmail.com"), "initial").getPostId();
-        mother.edit(new EditedPost(id, "changed", "changed"), 2);
-        mother.edit(new EditedPost(id, "changedAgain", "changedAgain"), 3);
+        mother.edit(new EditedPost.EditedPostRequest(id, "changed", "changed"), 2);
+        mother.edit(new EditedPost.EditedPostRequest(id, "changedAgain", "changedAgain"), 3);
 
         expect.toMatchSnapshot(
                 jsonWithMaskedProperties(controller.getDateVersionMapping(id).getBody(), "postId", "datePosted")

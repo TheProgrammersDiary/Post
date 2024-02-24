@@ -119,7 +119,7 @@ public class ITPostTests {
                 .trustStore("blog.p12", sslPassword)
                 .baseUri("https://localhost:" + port)
                 .contentType("application/json")
-                .body(new EditedPost(id, "edited", "edited"))
+                .body(new EditedPost.EditedPostRequest(id, "edited", "edited"))
                 .header("AUTHORIZATION", "Bearer " + jwtToken.value())
                 .put("/posts/edit")
                 .statusCode();
@@ -144,7 +144,7 @@ public class ITPostTests {
                 .trustStore("blog.p12", sslPassword)
                 .baseUri("https://localhost:" + port)
                 .contentType("application/json")
-                .body(new EditedPost(id, "edited", "edited"))
+                .body(new EditedPost.EditedPostRequest(id, "edited", "edited"))
                 .header("AUTHORIZATION", "Bearer " + nonAuthorJwtToken.value())
                 .put("/posts/edit")
                 .statusCode();
@@ -159,8 +159,8 @@ public class ITPostTests {
                 mother.request("author", "author@gmail.com"), newPostRequest()
         ).getBody().getPostId();
 
-        controller.edit(new EditedPost(id, "changed", "changed"));
-        controller.edit(new EditedPost(id, "changedAgain", "changedAgain"));
+        controller.edit(new EditedPost.EditedPostRequest(id, "changed", "changed"));
+        controller.edit(new EditedPost.EditedPostRequest(id, "changedAgain", "changedAgain"));
 
         Response response = given()
                 .trustStore("blog.p12", sslPassword)

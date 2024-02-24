@@ -15,6 +15,10 @@ public class PostApplication {
 
     @Bean
     public Safelist safelist() {
-        return Safelist.basicWithImages();
+        return Safelist
+                .basic()
+                .addTags("img", "s", "h1", "h2")
+                .addAttributes("img", "height", "src", "width")
+                .addProtocols("img", "src", "http", "https", "data");
     }
 }

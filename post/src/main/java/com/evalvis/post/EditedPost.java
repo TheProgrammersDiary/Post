@@ -1,11 +1,14 @@
 package com.evalvis.post;
 
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Safelist;
+
 public class EditedPost {
     private final String id;
     private final String title;
     private final String content;
 
-    public EditedPost(String id, String title, String content) {
+    private EditedPost(String id, String title, String content) {
         this.id = id;
         this.title = title;
         this.content = content;
@@ -30,5 +33,33 @@ public class EditedPost {
 
     public String getContent() {
         return content;
+    }
+
+    public static final class EditedPostRequest {
+        private final String id;
+        private final String title;
+        private final String content;
+
+        public EditedPostRequest(String id, String title, String content) {
+            this.id = id;
+            this.title = title;
+            this.content = content;
+        }
+
+        public EditedPost toEditedPost(Safelist safelist) {
+            return new EditedPost(id, title, Jsoup.clean(content, safelist));
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public String getTitle() {
+            return title;
+        }
+
+        public String getContent() {
+            return content;
+        }
     }
 }

@@ -82,14 +82,14 @@ final class PostController {
     }
 
     @PutMapping(value = "/edit")
-    ResponseEntity<String> edit(@RequestBody EditedPost post)
+    ResponseEntity<String> edit(@RequestBody EditedPost.EditedPostRequest post)
     {
         if(!repo.existsByPostIdAndAuthorEmail(post.getId(), SecurityContextHolder.getContext().getAuthentication().getName())) {
             throw new UnauthorizedException(
                     "Either the post with id: " + post.getId() + " does not exist or you are not authorized to edit it."
             );
         }
-        post.edit(repo, contentStorage);
+        post.toEditedPost(safelist).edit(repo, contentStorage);
         return ResponseEntity.ok("Updated.");
     }
 }
