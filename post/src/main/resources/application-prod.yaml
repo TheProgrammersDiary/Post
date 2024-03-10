@@ -3,7 +3,7 @@ post:
   http-masking-turned-on: true
 server:
   ssl:
-    key-store: classpath:blog.p12
+    key-store: /app/blog.p12
     key-store-password: ${ssl_blog_passphrase}
     key-store-type: pkcs12
     key-alias: blog
