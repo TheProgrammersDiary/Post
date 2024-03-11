@@ -71,6 +71,7 @@ public final class HttpLoggingFilter extends OncePerRequestFilter {
         );
         ObjectNode root = new ObjectMapper().createObjectNode().withObject("/HTTP");
         ObjectNode requestNode = root.withObject("/request");
+        requestNode.put("IP", request.getRemoteAddr());
         requestNode.put("URI", request.getRequestURI());
         requestNode.put("method", request.getMethod());
         requestNode.put("body", isHttpMaskingOn ? "[hidden]" : requestBody);
