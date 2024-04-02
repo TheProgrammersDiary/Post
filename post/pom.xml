@@ -19,7 +19,7 @@
         <repository>
             <id>github</id>
             <name>GitHub repo</name>
-            <url>https://maven.pkg.github.com/EvalVis/Security</url>
+            <url>https://maven.pkg.github.com/TheProgrammersDiary/Security</url>
         </repository>
     </repositories>
 
