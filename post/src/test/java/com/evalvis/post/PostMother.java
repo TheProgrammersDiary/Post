@@ -45,7 +45,8 @@ public class PostMother {
                 JwtRefreshToken.create(
                         username,
                         new UsernamePasswordAuthenticationToken(new User(email, null), null, null),
-                        key.value()
+                        key.value(),
+                        true
                 ),
                 key.value()
         );
